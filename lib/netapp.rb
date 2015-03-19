@@ -15,8 +15,9 @@
 # as a dependency ro can't be included in the gem itself ??
 #
 # Include NetApp Manageability SDK for Ruby (change name if neccessary)
-$: << File.expand_path(File.dirname(__FILE__) + "/../lib/NMSDK-Ruby")
-require 'NaServer'
+# $: << File.expand_path(File.dirname(__FILE__) + "/../lib/NMSDK-Ruby")
+require 'nmsdk/NaServer'
+#require 'NaServer'
 
 #
 #  "Style is what gives value and currency to thoughts." -- Schopenhauer
