@@ -22,7 +22,13 @@ class Aggregate < Filer
     def self.add(aggr)
         #TODO -  implement me!
         # Does this even fully work??? starting to question this shity ass code...
-        return false
+        # At this point I can only speculate that the code for this method should be something like this.
+
+        aggr_add = @@filer.invoke("aggr-add",
+                                     "aggregate", aggr)
+        raise aggr_add.results_reason \
+              if aggr_add.results_status == 'failed'
+        return true
     end
 
     def self.online(aggr)

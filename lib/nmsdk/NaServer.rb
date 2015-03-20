@@ -28,6 +28,9 @@ $NMSDK_VERSION = '5.3'
 # This method is used internally for NMSDK/API Usage Tracking.
 # NOTE: DO NOT REMOVE/MODIFY THIS METHOD.
 # NOTE: DO NOT USE THIS METHOD EXTERNALLY.
+# hmmm.... You could have made it private instead of leaving comments!?!?
+# at least if these were in a class.... but there not so maybe a module would have worked bertter?
+# Is this your first time using Ruby?
 def get_unix_info()
     v = $VERBOSE
     $VERBOSE = nil
@@ -43,7 +46,7 @@ def get_unix_info()
         else # for RHEL, OEL, etc.
             release_file = '/etc/issue'
         end
-        
+
         $VERBOSE = nil
         flavor = `head -n 1 #{release_file}`
         $VERBOSE = v
@@ -108,6 +111,7 @@ end
 
 # The client platform information string.
 # NOTE: DO NOT REMOVE/MODIFY THIS VARIABLE.
+# WTF  ^^  seriuously
 $NMSDK_PLATFORM = ""
 platform = RUBY_PLATFORM
 if (platform.include?("mingw") )
@@ -185,13 +189,16 @@ class NaServer
 
     # Following parameters are used for NMSDK/API Usage Tracking.
     # NOTE: DO NOT REMOVE/MODIFY THESE VARIABLES.
+    # Are you afraid someone would just randomly start deleting things?
+    # Do you think these Notes will stop that kind of madness.
+    # Is all this commenting really needed.
     @nmsdk_version = $NMSDK_VERSION
     @nmsdk_platform = $NMSDK_PLATFORM
     @nmsdk_language = "Ruby"
     @nmsdk_app = ""
   end
 
- 
+
   # Set the client application name.
   def set_application_name(app_name)
     @nmsdk_app = app_name
@@ -199,6 +206,9 @@ class NaServer
 
 
   # Get the client application name.
+  # really? I had no idea what this method would do without this grand comment,
+  # thank you so very much for commenting your getter. Wait, I thought this was
+  # Ruby, wtf are you doing creating getter and setter methods anyways?
   def get_application_name()
     return @nmsdk_app
   end
@@ -210,7 +220,7 @@ class NaServer
   # rights (the username must be root in that case). Pass in
   # 'CERTIFICATE' to use certificate based authentication with the
   # DataFabric Manager server.
-  # 
+  #
   # If $style = CERTIFICATE, you can use certificates to authenticate
   # clients who attempt to connect to a server without the need of
   # username and password. This style will internally set the transport
@@ -218,9 +228,9 @@ class NaServer
   # in order to properly authenticate the identity of the server.
   # Server certificate verification will be enabled by default using this
   # style and Server certificate verification will always enable hostname
-  # verification. You can disable server certificate (with hostname) 
+  # verification. You can disable server certificate (with hostname)
   # verification using set_server_cert_verification().
-  
+
   def set_style(style)
     if(!style.eql?("HOSTS") and !style.eql?("LOGIN") and !style.eql?("CERTIFICATE"))
         return fail_response(13001, "NaServer::set_style: bad style \"" + style + "\"")
@@ -264,6 +274,7 @@ class NaServer
   #
   # The default is 'FILER'.
 
+  #who's fuckin amazing idea was this pile of crap here vv
   def set_server_type(server_type)
     if (server_type.casecmp('filer') == 0)
         @url = FILER_URL
@@ -274,7 +285,7 @@ class NaServer
     elsif (server_type.casecmp('agent') ==  0)
         @url = AGENT_URL
         @port = 4092
-        @dtd = AGENT_dtd  
+        @dtd = AGENT_dtd
     elsif (server_type.casecmp('dfm') ==  0)
         @url = DFM_URL
         @port = 8088
@@ -333,14 +344,14 @@ class NaServer
 
 
   # Retrieve the transport used for this connection.
-  
+
   def get_transport_type()
     return @transport_type
   end
 
 
   # Set the style of debug.
-  
+
   def set_debug_style(debug_style)
     if(!debug_style.eql?("NA_PRINT_DONT_PARSE"))
       return fail_response(13001, "NaServer::set_debug_style: bad style \"" + debug_style + "\"")
@@ -353,14 +364,14 @@ class NaServer
   # Override the default port for this server.  If you
   # also call set_server_type(), you must call it before
   # calling set_port().
-  
+
   def set_port(port)
     @port = port
   end
 
 
   # Retrieve the port used for the remote server.
-  
+
   def get_port()
     return @port
   end
@@ -369,7 +380,7 @@ class NaServer
   # Check the type of debug style and return the
   # value for different needs. Return true if debug style
   # is NA_PRINT_DONT_PARSE,	else return false.
-  
+
   def is_debugging()
     if(@debug_style.eql?("NA_PRINT_DONT_PARSE"))
         return true
@@ -380,7 +391,7 @@ class NaServer
 
 
   # Return the raw XML output.
-  
+
   def get_raw_xml_output()
     return @xml
   end
@@ -428,14 +439,14 @@ class NaServer
         print("\nError : No corresponding end tag for the element \"" + $tag_element_stack.pop() + "\"\n")
         exit
     end
-    stack_len = $ZAPI_stack.length 	
+    stack_len = $ZAPI_stack.length
     if(stack_len <= 0)
         return fail_response(13001, "Zapi::parse_xml-no elements on stack")
     end
     r = $ZAPI_stack.pop()
     if (r.name != "netapp")
         return fail_response(13001, "Zapi::parse_xml - Expected <netapp> element but got" + r.name)
-    end	
+    end
     results = r.child_get("results")
     unless(results)
         return fail_response(13001, "Zapi::parse_xml - No results element in output!")
@@ -448,8 +459,8 @@ class NaServer
   # an NaElement and return the result in another
   # NaElement.
 
-  def invoke_elem(req)  
-    xmlrequest = req.toEncodedString()	
+  def invoke_elem(req)
+    xmlrequest = req.toEncodedString()
     vfiler_req = ""
     originator_id_req = ""
     if(!@vfiler.eql?(""))
@@ -463,7 +474,7 @@ class NaServer
     if(!@nmsdk_app.eql?(""))
         app_name_req = " nmsdk_app='" + @nmsdk_app + "'"
     end
-    
+
     content = "<?xml version=\'1.0\' encoding=\'utf-8\'?>" +
               "\n" +
           "<!DOCTYPE netapp SYSTEM \'" + @dtd + "\'>" +
@@ -535,7 +546,7 @@ class NaServer
         return fail_response(111, msg)
     rescue OpenSSL::SSL::SSLError => msg
         return fail_response(13001, msg)
-    rescue => msg 
+    rescue => msg
         print("\nError : ")
         return fail_response(13001, msg)
     end
@@ -561,11 +572,14 @@ class NaServer
    #
 
   def invoke(api, *args)
-    num_parms = args.length	
+    num_parms = args.length
+    #well thats readable vv
     if ((num_parms & 1) != 0)
         return self.fail_response(13001, "in Zapi::invoke, invalid number of parameters")
-    end	
+    end
     xi = NaElement.new(api)
+    #really?!?!?!
+    #why do we even have the Enumerable class when you can do shit like a while loop.
     i = 0
     while(i < num_parms)
         key = args[i]
@@ -635,8 +649,8 @@ class NaServer
 
 
   #Retrieves the connection timeout value (in seconds) for the given server context.
-  
-  def get_timeout()    
+
+  def get_timeout()
     return @timeout
   end
 
@@ -669,7 +683,7 @@ class NaServer
 
 
   # Sets the client certificate and key files that are required for client authentication
-  # by the server using certificates. If key file is not defined, then the certificate file 
+  # by the server using certificates. If key file is not defined, then the certificate file
   # will be used as the key file.
 
 
@@ -689,7 +703,7 @@ class NaServer
   end
 
 
-  # Specifies the certificates of the Certificate Authorities (CAs) that are 
+  # Specifies the certificates of the Certificate Authorities (CAs) that are
   # trusted by this application and that will be used to verify the server certificate.
 
 
@@ -703,7 +717,7 @@ class NaServer
   end
 
 
-  # Enables or disables hostname verification by the client during server certificate the 
+  # Enables or disables hostname verification by the client during server certificate the
   # server certificate.
 
 
@@ -767,14 +781,14 @@ class MyListener
         print("\nError : Missing start tag for " + element + "\n")
         exit
     end
-    if(stack_len > 1) 
+    if(stack_len > 1)
         n = $ZAPI_stack.pop()
         i = $ZAPI_stack.length
     if(i != stack_len - 1)
         print("pop did not work!!!!\n")
     end
     $ZAPI_stack[i-1].child_add(n)
-    end	
+    end
   end
 
   def text(text)
