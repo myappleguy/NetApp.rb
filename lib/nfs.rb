@@ -1,5 +1,5 @@
-
 class NFS < Filer
+
     def self.on
         nfs_on = @@filer.invoke("nfs-enable")
         raise nfs_on.results_reason \

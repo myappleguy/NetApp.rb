@@ -6,6 +6,7 @@ class Diag < Filer
         raise diag_status.results_reason \
               if diag_status.results_status == 'failed'
         stat = diag_status.child_get("attributes").children_get
+        # you keep using retrun... http://i.imgur.com/Rg7x1RV.jpg
         stat.each { |k| return k.child_get_string("status") }
     end
 end

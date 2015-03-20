@@ -1,5 +1,6 @@
 # connect to filer, assign object
 class Filer
+
     def initialize(filer, username, password, secure=true, type=filer)
         @@filer = NaServer.new(filer, 1, 17) # specifies API version (1.17)
         if secure

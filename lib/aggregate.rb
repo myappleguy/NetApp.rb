@@ -1,5 +1,6 @@
 # function definitions to interface with NetApp filers
 class Aggregate < Filer
+
     def self.create(aggr, diskcount, raidtype="raid_dp")
         aggr_create = @@filer.invoke("aggr-create",
                                      "aggregate", aggr,
@@ -19,7 +20,8 @@ class Aggregate < Filer
     end
 
     def self.add(aggr)
-        # implement me!
+        #TODO -  implement me!
+        # Does this even fully work??? starting to question this shity ass code...
         return false
     end
 
@@ -59,6 +61,8 @@ class Aggregate < Filer
         return result
     end
 
+    #TODO - check this method against the parent class version that this overrides
+    # there is some apprant duplication that should be able to refactor out
     def self.info(aggr, verbose=true)
         aggr_list_info = @@filer.invoke("aggr-list-info",
                                         "aggregate", aggr,
