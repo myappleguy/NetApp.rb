@@ -15,11 +15,11 @@ require './lib/netapp.rb'
 
 
 def conn_filer
-	# implement something generic over here
-	Filer.new(@@fileraddr, @@fileruser, @@filerpwd)
+  # implement something generic over here
+  Filer.new(@@fileraddr, @@fileruser, @@filerpwd)
 end
 
-helpers do  
+helpers do
   def protected!
     return if authorized?
     headers['WWW-Authenticate'] = 'Basic realm="Restricted Area"'
@@ -33,22 +33,22 @@ helpers do
 end
 
 get '/' do
-	"nope."
+  "nope."
 end
 
 put '/add/user/:username' do
-	protected!
-	conn_filer
-	begin
-		volumename = params[:username]
-		volumepath = "/vol/#{volumename}/"
-		Volume.create(params[:aggregate], volumename, params[:volumesize])
-		Quota.create(volumename, volumepath, params[:quotasize], type="user")
-	rescue => e
-		status 409 and raise
-		return e
-	else
-		status 201
-	end 
+  protected!
+  conn_filer
+  begin
+    volumename = params[:username]
+    volumepath = "/vol/#{volumename}/"
+    Volume.create(params[:aggregate], volumename, params[:volumesize])
+    Quota.create(volumename, volumepath, params[:quotasize], type="user")
+  rescue => e
+    status 409 and raise
+    return e
+  else
+    status 201
+  end
 end
 
