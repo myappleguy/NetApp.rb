@@ -1,55 +1,56 @@
-# connect to filer, assign object
-class Filer
+module NetAppSdk
+  # connect to filer, assign object
+  class Filer
 
     def initialize(filer, username, password, secure=true, type=filer)
       require "pry"; binding.pry
-        @@filer = NaServer.new(filer, 1, 17) # specifies API version (1.17)
-        if secure
-            # connect via SSL/TLS
-            @@filer.set_transport_type("HTTPS")
-            raise 'insecure connection!' unless @@filer.use_https
-            @@filer.set_admin_user(username, password)
-        else
-            # non-encrypted connection
-            @@filer.set_admin_user(username, password)
-        end
+      @@filer = NaServer.new(filer, 1, 17) # specifies API version (1.17)
+      if secure
+        # connect via SSL/TLS
+        @@filer.set_transport_type("HTTPS")
+        raise 'insecure connection!' unless @@filer.use_https
+        @@filer.set_admin_user(username, password)
+      else
+        # non-encrypted connection
+        @@filer.set_admin_user(username, password)
+      end
 
-        # TODO: implement NaServer::set_server_type for NetApp DFM/Filer
-        # TODO: implement different login styles (usr,pwd - cert - ...)
-        #       see also - NaServer::set_style
+      # TODO: implement NaServer::set_server_type for NetApp DFM/Filer
+      # TODO: implement different login styles (usr,pwd - cert - ...)
+      #       see also - NaServer::set_style
     end
 
     def self.is_secure?
-        https = @@filer.use_https
-        return true if https
+      https = @@filer.use_https
+      return true if https
     end
 
     def self.is_clustered?
-        sys_version = @@filer.invoke("system-get-version")
-        raise sys_version.results_reason \
-              if sys_version.results_status == 'failed'
-        return sys_version.child_get_string("version") =~ /Cluster-Mode/ ? true : false
-    end
+      sys_version = @@filer.invoke("system-get-version")
+      raise sys_version.results_reason \
+        if sys_version.results_status == 'failed'
+          return sys_version.child_get_string("version") =~ /Cluster-Mode/ ? true : false
+      end
 
-    def self.is_ha?
+      def self.is_ha?
         cf_status = @@filer.invoke("cf-status")
         return false if cf_status.results_status == 'failed' \
-                     and cf_status.results_reason == 'monitor not initialiazed'
+          and cf_status.results_reason == 'monitor not initialiazed'
         raise cf_status.results_reason if cf_status.results_status == 'failed'
         return result = cf_status.child_get_string("is-enabled")
-    end
+      end
 
-    def self.set_vfiler(vfilername)
+      def self.set_vfiler(vfilername)
         return true if @@filer.set_vfiler(vfilername)
-    end
+      end
 
-    def self.info
+      def self.info
         system_info = @@filer.invoke("system-get-info")
         raise system_info.results_reason \
-              if system_info.results_status == 'failed'
-        result = {}
-        system_info.child_get("system-info").children_get.each do |key|
-            result = {
+          if system_info.results_status == 'failed'
+            result = {}
+            system_info.child_get("system-info").children_get.each do |key|
+              result = {
                 systemid:                      key.child_get_string("system-id"),
                 systemname:                    key.child_get_string("system-name"),
                 systemmodel:                   key.child_get_string("system-model"),
@@ -77,10 +78,11 @@ class Filer
                 controlleraddress:             key.child_get_string("controller-address"),
                 boardtype:                     key.child_get_string("board-type"),
                 boardspeed:                    key.child_get_string("board-speed")
-            }
+              }
+            end
+            return result
         end
-        return result
+      end
+
+
     end
-end
-
-
