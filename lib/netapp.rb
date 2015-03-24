@@ -13,9 +13,8 @@
 #
 #
 
-Gem.find_files("lib/**/*.rb").each { |path| require path }
-
-module NetAppSdk
-  require "pry"; binding.pry
-  puts "This shit should work"
+Gem.find_files("lib/**/*.rb").each do |path|
+  puts "Requiring #{path}"
+  require path
 end
+

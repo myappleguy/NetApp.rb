@@ -2,6 +2,7 @@
 class Filer
 
     def initialize(filer, username, password, secure=true, type=filer)
+      require "pry"; binding.pry
         @@filer = NaServer.new(filer, 1, 17) # specifies API version (1.17)
         if secure
             # connect via SSL/TLS
