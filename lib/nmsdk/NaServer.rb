@@ -29,57 +29,58 @@ $NMSDK_VERSION = '5.3'
 # NOTE: DO NOT REMOVE/MODIFY THIS METHOD.
 # NOTE: DO NOT USE THIS METHOD EXTERNALLY.
 def get_unix_info()
-    v = $VERBOSE
-    $VERBOSE = nil
-    sysname = `uname -s`
-    $VERBOSE = v
-    sysname = sysname.chomp
+  #wtf is this little song and dance about ??
+  v = $VERBOSE
+  $VERBOSE = nil
+  sysname = `uname -s`
+  $VERBOSE = v
+  sysname = sysname.chomp
 
-    if(sysname.include?("Linux")) # for linux (rhel, suse, oel)
-        # check if it is SUSE
-        filepath = Pathname.new("/etc/SuSE-release")
-        if(filepath.exist?())
-            release_file = '/etc/SuSE-release'
-        else # for RHEL, OEL, etc.
-            release_file = '/etc/issue'
-        end
-        
-        $VERBOSE = nil
-        flavor = `head -n 1 #{release_file}`
-        $VERBOSE = v
-	# Remove the string within parentheses
-        sysname = flavor.sub(/\(\w+\)/, '').chomp
-        sysname = sysname.sub(/\s+\Z/, "")
-
-    else # for other unix platforms (solaris, aix, hpux)
-        $VERBOSE = nil
-        if(sysname.eql?("AIX"))
-            version = `oslevel`
-        else
-            version = `uname -r`
-        end
-        $VERBOSE = v
-        sysname = sysname + " " + version.chomp
+  if(sysname.include?("Linux")) # for linux (rhel, suse, oel)
+    # check if it is SUSE
+    filepath = Pathname.new("/etc/SuSE-release")
+    if(filepath.exist?())
+      release_file = '/etc/SuSE-release'
+    else # for RHEL, OEL, etc.
+      release_file = '/etc/issue'
     end
 
     $VERBOSE = nil
-    if(sysname.eql?("HP-UX"))
-        processor = `uname -m`
-    else
-        processor = `uname -p`
-    end
+    flavor = `head -n 1 #{release_file}`
+    $VERBOSE = v
+    # Remove the string within parentheses
+    sysname = flavor.sub(/\(\w+\)/, '').chomp
+    sysname = sysname.sub(/\s+\Z/, "")
 
-    if(sysname.include?("SunOS"))
-        isainfo = `isainfo -b`
-        isainfo = isainfo.chomp
-	bitinfo = " " + isainfo + "-bit"
+  else # for other unix platforms (solaris, aix, hpux)
+    $VERBOSE = nil
+    if(sysname.eql?("AIX"))
+      version = `oslevel`
     else
-        bitinfo = ""
+      version = `uname -r`
     end
     $VERBOSE = v
+    sysname = sysname + " " + version.chomp
+  end
 
-    os_info = sysname + " " + processor.chomp + bitinfo
-    return os_info
+  $VERBOSE = nil
+  if(sysname.eql?("HP-UX"))
+    processor = `uname -m`
+  else
+    processor = `uname -p`
+  end
+
+  if(sysname.include?("SunOS"))
+    isainfo = `isainfo -b`
+    isainfo = isainfo.chomp
+    bitinfo = " " + isainfo + "-bit"
+  else
+    bitinfo = ""
+  end
+  $VERBOSE = v
+
+  os_info = sysname + " " + processor.chomp + bitinfo
+  os_info
 end
 
 
@@ -88,22 +89,22 @@ end
 # NOTE: DO NOT REMOVE/MODIFY THIS METHOD.
 # NOTE: DO NOT USE THIS METHOD EXTERNALLY.
 def get_windows_info()
-    sysname = ""
-    processor = ""
-    os_info = ""
+  sysname = ""
+  processor = ""
+  os_info = ""
 
-    require 'win32/registry'
+  require 'win32/registry'
 
-    Win32::Registry::HKEY_LOCAL_MACHINE.open('SOFTWARE\Microsoft\Windows NT\CurrentVersion') do |reg|
-        type, sysname = reg.read('ProductName')
-    end
+  Win32::Registry::HKEY_LOCAL_MACHINE.open('SOFTWARE\Microsoft\Windows NT\CurrentVersion') do |reg|
+    type, sysname = reg.read('ProductName')
+  end
 
-    Win32::Registry::HKEY_LOCAL_MACHINE.open('SYSTEM\ControlSet001\Control\Session Manager\Environment') do |reg|
-        type, processor = reg.read('PROCESSOR_ARCHITECTURE')
-    end
+  Win32::Registry::HKEY_LOCAL_MACHINE.open('SYSTEM\ControlSet001\Control\Session Manager\Environment') do |reg|
+    type, processor = reg.read('PROCESSOR_ARCHITECTURE')
+  end
 
-    os_info = sysname + " " + processor
-    return os_info
+  os_info = sysname + " " + processor
+  os_info
 end
 
 # The client platform information string.
@@ -111,9 +112,9 @@ end
 $NMSDK_PLATFORM = ""
 platform = RUBY_PLATFORM
 if (platform.include?("mingw") )
-    $NMSDK_PLATFORM = get_windows_info()
+  $NMSDK_PLATFORM = get_windows_info()
 else
-    $NMSDK_PLATFORM = get_unix_info()
+  $NMSDK_PLATFORM = get_unix_info()
 end
 
 
@@ -154,6 +155,11 @@ class NaServer
 
   ZAPI_xmlns = 'http://www.netapp.com/filer/admin'
 
+  attr_accessor :nmsdk_app
+  alias_method :set_application_name, :nmsdk=
+  alias_method :get_application_name, :nmsdk
+
+
   # Create a new connection to server 'server'.  Before use,
   # you either need to set the style to "hosts.equiv" or set
   # the username (always "root" at present) and password with
@@ -191,26 +197,13 @@ class NaServer
     @nmsdk_app = ""
   end
 
- 
-  # Set the client application name.
-  def set_application_name(app_name)
-    @nmsdk_app = app_name
-  end
-
-
-  # Get the client application name.
-  def get_application_name()
-    return @nmsdk_app
-  end
-
-
   # Pass in 'LOGIN' to cause the server to use HTTP simple
   # authentication with a username and password.  Pass in 'HOSTS'
   # to use the hosts.equiv file on the filer to determine access
   # rights (the username must be root in that case). Pass in
   # 'CERTIFICATE' to use certificate based authentication with the
   # DataFabric Manager server.
-  # 
+  #
   # If $style = CERTIFICATE, you can use certificates to authenticate
   # clients who attempt to connect to a server without the need of
   # username and password. This style will internally set the transport
@@ -218,33 +211,33 @@ class NaServer
   # in order to properly authenticate the identity of the server.
   # Server certificate verification will be enabled by default using this
   # style and Server certificate verification will always enable hostname
-  # verification. You can disable server certificate (with hostname) 
+  # verification. You can disable server certificate (with hostname)
   # verification using set_server_cert_verification().
-  
+
   def set_style(style)
     if(!style.eql?("HOSTS") and !style.eql?("LOGIN") and !style.eql?("CERTIFICATE"))
-        return fail_response(13001, "NaServer::set_style: bad style \"" + style + "\"")
+      fail_response(13001, "NaServer::set_style: bad style \"" + style + "\"")
     end
     if (style.eql?("CERTIFICATE"))
-        ret = set_transport_type("HTTPS")
-        if (ret)
-            return ret
-        end
-        @enable_server_cert_verification = true
-        @enable_hostname_verification = true
+      ret = set_transport_type("HTTPS")
+      if (ret)
+        ret
+      end
+      @enable_server_cert_verification = true
+      @enable_hostname_verification = true
     else
-        @enable_server_cert_verification = false
-        @enable_hostname_verification = false
+      @enable_server_cert_verification = false
+      @enable_hostname_verification = false
     end
     @style = style
-    return nil
+    nil
   end
 
 
   # Get the authentication style
 
   def get_style()
-    return @style
+    @style
   end
 
 
@@ -266,39 +259,39 @@ class NaServer
 
   def set_server_type(server_type)
     if (server_type.casecmp('filer') == 0)
-        @url = FILER_URL
-        @dtd = FILER_dtd
+      @url = FILER_URL
+      @dtd = FILER_dtd
     elsif (server_type.casecmp('netcache') ==  0)
-        @url = NETCACHE_URL
-        @port = 80
+      @url = NETCACHE_URL
+      @port = 80
     elsif (server_type.casecmp('agent') ==  0)
-        @url = AGENT_URL
-        @port = 4092
-        @dtd = AGENT_dtd  
+      @url = AGENT_URL
+      @port = 4092
+      @dtd = AGENT_dtd
     elsif (server_type.casecmp('dfm') ==  0)
-        @url = DFM_URL
-        @port = 8088
-        @dtd = DFM_dtd
-        if(@transport_type == "HTTPS")
-            @port = 8488
-        end
+      @url = DFM_URL
+      @port = 8088
+      @dtd = DFM_dtd
+      if(@transport_type == "HTTPS")
+        @port = 8488
+      end
     elsif (server_type.casecmp('ocum') ==  0)
-        @url = DFM_URL
-        @port = 443
-        @transport_type = "HTTPS"
-        @dtd = DFM_dtd
+      @url = DFM_URL
+      @port = 443
+      @transport_type = "HTTPS"
+      @dtd = DFM_dtd
     else
-        return fail_response(13001, "NaServer::set_server_type: bad type \"" + server_type + "\"")
+      fail_response(13001, "NaServer::set_server_type: bad type \"" + server_type + "\"")
     end
     @server_type = server_type
-    return nil
+    nil
   end
 
 
   # Get the type of server this server connection applies to.
 
   def get_server_type()
-    return @server_type
+    @server_type
   end
 
 
@@ -307,43 +300,43 @@ class NaServer
 
   def set_transport_type(scheme)
     if(!scheme.eql?("HTTP") and !scheme.eql?("HTTPS"))
-        return fail_response(13001, "NaServer::set_transport_type: bad type \" " + scheme + "\"")
+      fail_response(13001, "NaServer::set_transport_type: bad type \" " + scheme + "\"")
     end
     if(scheme.eql?("HTTP"))
-        if(@server_type.eql?("OCUM"))
-            return fail_response(13001, "Server type '" + @server_type + "' does not support '" + scheme + "' transport type")
-        end
+      if(@server_type.eql?("OCUM"))
+        fail_response(13001, "Server type '" + @server_type + "' does not support '" + scheme + "' transport type")
+      end
 
-        @transport_type = "HTTP"
-        if(@server_type.eql?("DFM"))
-            @port = 8088
-        else
-            @port = 80
-        end
+      @transport_type = "HTTP"
+      if(@server_type.eql?("DFM"))
+        @port = 8088
+      else
+        @port = 80
+      end
     elsif(scheme.eql?("HTTPS"))
-        @transport_type = "HTTPS"
-        if(@server_type.eql?("DFM"))
-            @port = 8488
-        else
-            @port = 443
-        end
+      @transport_type = "HTTPS"
+      if(@server_type.eql?("DFM"))
+        @port = 8488
+      else
+        @port = 443
+      end
     end
-    return nil
+    nil
   end
 
 
   # Retrieve the transport used for this connection.
-  
+
   def get_transport_type()
-    return @transport_type
+    @transport_type
   end
 
 
   # Set the style of debug.
-  
+
   def set_debug_style(debug_style)
     if(!debug_style.eql?("NA_PRINT_DONT_PARSE"))
-      return fail_response(13001, "NaServer::set_debug_style: bad style \"" + debug_style + "\"")
+      fail_response(13001, "NaServer::set_debug_style: bad style \"" + debug_style + "\"")
     else
       @debug_style = debug_style
     end
@@ -353,36 +346,36 @@ class NaServer
   # Override the default port for this server.  If you
   # also call set_server_type(), you must call it before
   # calling set_port().
-  
+
   def set_port(port)
     @port = port
   end
 
 
   # Retrieve the port used for the remote server.
-  
+
   def get_port()
-    return @port
+    @port
   end
 
 
   # Check the type of debug style and return the
   # value for different needs. Return true if debug style
   # is NA_PRINT_DONT_PARSE,	else return false.
-  
+
   def is_debugging()
     if(@debug_style.eql?("NA_PRINT_DONT_PARSE"))
-        return true
+      true
     else
-    return false
+      false
     end
   end
 
 
   # Return the raw XML output.
-  
+
   def get_raw_xml_output()
-    return @xml
+    @xml
   end
 
 
@@ -397,9 +390,9 @@ class NaServer
 
   def use_https()
     if(@transport_type.eql?("HTTPS"))
-      return true
+      true
     else
-      return false
+      false
     end
   end
 
@@ -408,15 +401,14 @@ class NaServer
     xml_response = StringIO.new(xmlresponse)
     Document.parse_stream(xml_response, MyListener.new)
     if($tag_element_stack.length > 0)
-        print("\nError : No corresponding end tag for the element \"" + $tag_element_stack.pop() + "\"\n")
-        exit
+      print("\nError : No corresponding end tag for the element \"" + $tag_element_stack.pop() + "\"\n")
+      exit
     end
     stack_len = $ZAPI_stack.length
     if(stack_len <= 0)
-        return fail_response(13001, "Zapi::parse_xml-no elements on stack")
+      fail_response(13001, "Zapi::parse_xml-no elements on stack")
     end
-    r = $ZAPI_stack.pop()
-    return r
+    $ZAPI_stack.pop()
   end
 
 
@@ -425,156 +417,152 @@ class NaServer
     xml_response = StringIO.new(xmlresponse)
     Document.parse_stream(xml_response, MyListener.new)
     if($tag_element_stack.length > 0)
-        print("\nError : No corresponding end tag for the element \"" + $tag_element_stack.pop() + "\"\n")
-        exit
+      print("\nError : No corresponding end tag for the element \"" + $tag_element_stack.pop() + "\"\n")
+      exit
     end
-    stack_len = $ZAPI_stack.length 	
+    stack_len = $ZAPI_stack.length
     if(stack_len <= 0)
-        return fail_response(13001, "Zapi::parse_xml-no elements on stack")
+      fail_response(13001, "Zapi::parse_xml-no elements on stack")
     end
     r = $ZAPI_stack.pop()
     if (r.name != "netapp")
-        return fail_response(13001, "Zapi::parse_xml - Expected <netapp> element but got" + r.name)
-    end	
-    results = r.child_get("results")
-    unless(results)
-        return fail_response(13001, "Zapi::parse_xml - No results element in output!")
+      fail_response(13001, "Zapi::parse_xml - Expected <netapp> element but got" + r.name)
     end
-    return results
+    results = r.child_get("results")
+    return fail_response(13001, "Zapi::parse_xml - No results element in output!") unless(results)
+    results
   end
 
+  def version_string
+    "#{@major_version.to_s}.#{@minor_version.to_s}"
+  end
 
   # Submit an XML request already encapsulated as
   # an NaElement and return the result in another
   # NaElement.
 
-  def invoke_elem(req)  
-    xmlrequest = req.toEncodedString()	
+  def invoke_elem(req)
+    xmlrequest = req.toEncodedString()
     vfiler_req = ""
     originator_id_req = ""
     if(!@vfiler.eql?(""))
-        vfiler_req = " vfiler=\"" + @vfiler + "\""
+      vfiler_req = " vfiler=\"" + @vfiler + "\""
     end
     if(!@originator_id.eql?(""))
-        originator_id_req = " originator_id=\"" + @originator_id + "\""
+      originator_id_req = " originator_id=\"" + @originator_id + "\""
     end
 
     app_name_req = ""
     if(!@nmsdk_app.eql?(""))
-        app_name_req = " nmsdk_app='" + @nmsdk_app + "'"
+      app_name_req = " nmsdk_app='" + @nmsdk_app + "'"
     end
-    
-    content = "<?xml version=\'1.0\' encoding=\'utf-8\'?>" +
-              "\n" +
-          "<!DOCTYPE netapp SYSTEM \'" + @dtd + "\'>" +
-          "\n" +
-          "<netapp" +
-          vfiler_req +
-          originator_id_req +
-          " version='" + @major_version.to_s() + "." + @minor_version.to_s() + "' xmlns='" + ZAPI_xmlns + "'" +
-          " nmsdk_version='" + @nmsdk_version + "'" +
-          " nmsdk_platform='" + @nmsdk_platform + "'" +
-          " nmsdk_language='" + @nmsdk_language + "'" +
-          app_name_req +
-          ">" +
-          xmlrequest +
-          "</netapp>"
+
+    content = <<-EOT
+      <?xml version=\'1.0\' encoding=\'utf-8\'?>
+      <!DOCTYPE netapp SYSTEM \'#{@dtd}\'>
+      <netapp#{vfiler_req}#{originator_id_req} version='#{version_string}' xmlns='#{ZAPI_xmlns}'
+        nmsdk_version='#{@nmsdk_version}'
+        nmsdk_platform='#{@nmsdk_platform}'
+        nmsdk_language='#{@nmsdk_language}'
+        #{app_name_req}> #{xmlrequest}
+      </netapp>"
+    EOT
 
     if(@debug_style.eql?("NA_PRINT_DONT_PARSE"))
-        print("INPUT \n " + content)
+      print("INPUT \n " + content)
     end
 
     begin
-        http = Net::HTTP.new(@server, @port)
-        if(@transport_type.eql?("HTTPS"))
-            http.use_ssl = true
-            http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-            # Server Certificate Verification
-            if(@enable_server_cert_verification.eql?(true))
-                http.ca_file = @ca_file
-                http.verify_mode = OpenSSL::SSL::VERIFY_PEER | OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
-                unless(@enable_hostname_verification)
-                    OpenSSL::SSL.module_eval do
-                        verify_method = method(:verify_certificate_identity)
-                        metaclass = class << OpenSSL::SSL; self; end
-                        metaclass.send :define_method, :verify_certificate_identity do |cert, hostname|
-                            true
-                        end
-                    end
-                end
+      http = Net::HTTP.new(@server, @port)
+      if(@transport_type.eql?("HTTPS"))
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        # Server Certificate Verification
+        if(@enable_server_cert_verification.eql?(true))
+          http.ca_file = @ca_file
+          http.verify_mode = OpenSSL::SSL::VERIFY_PEER | OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
+          unless(@enable_hostname_verification)
+            OpenSSL::SSL.module_eval do
+              verify_method = method(:verify_certificate_identity)
+              metaclass = class << OpenSSL::SSL; self; end
+              metaclass.send :define_method, :verify_certificate_identity do |cert, hostname|
+                true
+              end
             end
-            # Client Certificate Verification
-            if(@cert_file != nil)
-                pem = File.read(@cert_file)
-                http.cert = OpenSSL::X509::Certificate.new(pem)
-                # @key_file is nil when the certificate and key are in the same file (@cert_file)
-                if(@key_file == nil)
-                    http.key = OpenSSL::PKey::RSA.new(pem)
-                else
-                    key = File.read(@key_file)
-                    http.key = OpenSSL::PKey::RSA.new(key, @key_passwd)
-                end
-            end
+          end
         end
-        if(@timeout > 0)
-            http.open_timeout = @timeout
-            http.read_timeout = @timeout
+        # Client Certificate Verification
+        if(@cert_file != nil)
+          pem = File.read(@cert_file)
+          http.cert = OpenSSL::X509::Certificate.new(pem)
+          # @key_file is nil when the certificate and key are in the same file (@cert_file)
+          if(@key_file == nil)
+            http.key = OpenSSL::PKey::RSA.new(pem)
+          else
+            key = File.read(@key_file)
+            http.key = OpenSSL::PKey::RSA.new(key, @key_passwd)
+          end
         end
-        request = Net::HTTP::Post.new(@url)
-        if(!@style.eql?("HOSTS"))
-            request.basic_auth @user, @password
-        end
-        request.content_type = "text/xml; charset=\"UTF-8\""
-        request.body = content
-        response = http.start {|http| http.request(request)}
+      end
+      if(@timeout > 0)
+        http.open_timeout = @timeout
+        http.read_timeout = @timeout
+      end
+      request = Net::HTTP::Post.new(@url)
+      if(!@style.eql?("HOSTS"))
+        request.basic_auth @user, @password
+      end
+      request.content_type = "text/xml; charset=\"UTF-8\""
+      request.body = content
+      response = http.start {|http| http.request(request)}
     rescue Timeout::Error => msg
-        print("\nError : ")
-        return fail_response(13001, msg)
+      print("\nError : ")
+      fail_response(13001, msg)
     rescue Errno::ECONNREFUSED => msg
-        print("\nError : ")
-        return fail_response(111, msg)
+      print("\nError : ")
+      fail_response(111, msg)
     rescue OpenSSL::SSL::SSLError => msg
-        return fail_response(13001, msg)
-    rescue => msg 
-        print("\nError : ")
-        return fail_response(13001, msg)
+      fail_response(13001, msg)
+    rescue => msg
+      print("\nError : ")
+      fail_response(13001, msg)
     end
 
     if(!response)
-        return fail_response(13001,"No response received")
+      fail_response(13001,"No response received")
     end
     if(response.code.eql?("401"))
-        return fail_response(13002,"Authorization failed")
+      fail_response(13002,"Authorization failed")
     end
-    return parse_xml(response.body)
+    parse_xml(response.body)
   end
 
 
-   #A convenience routine which wraps invoke_elem().
-   #It constructs an NaElement with name $api, and for
-   #each argument name/value pair, adds a child element
-   #to it.  It's an error to have an even number of
-   #arguments to this function.
-   #Example: myserver->invoke('snapshot-create',
-   #                                'snapshot', 'mysnapshot',
-   #                            'volume', 'vol0');
-   #
+  #A convenience routine which wraps invoke_elem().
+  #It constructs an NaElement with name $api, and for
+  #each argument name/value pair, adds a child element
+  #to it.  It's an error to have an even number of
+  #arguments to this function.
+  #Example: myserver->invoke('snapshot-create',
+  #                                'snapshot', 'mysnapshot',
+  #                            'volume', 'vol0');
+  #
 
   def invoke(api, *args)
-    num_parms = args.length	
+    num_parms = args.length
     if ((num_parms & 1) != 0)
-        return self.fail_response(13001, "in Zapi::invoke, invalid number of parameters")
-    end	
+      self.fail_response(13001, "in Zapi::invoke, invalid number of parameters")
+    end
     xi = NaElement.new(api)
     i = 0
     while(i < num_parms)
-        key = args[i]
-    i = i + 1
-    value = args[i]
-    i = i + 1
-    xi.child_add(NaElement.new(key, value))
+      key = args[i]
+      i = i + 1
+      value = args[i]
+      i = i + 1
+      xi.child_add(NaElement.new(key, value))
     end
-    return invoke_elem(xi)
+    invoke_elem(xi)
   end
 
 
@@ -582,10 +570,11 @@ class NaServer
 
   def set_vfiler(vfiler_name)
     if(@major_version >= 1 and @minor_version >= 7)
-        @vfiler = vfiler_name
-        return 1
+      @vfiler = vfiler_name
+      1
+    else
+      0
     end
-    return 0
   end
 
 
@@ -595,11 +584,12 @@ class NaServer
 
   def set_vserver(vserver_name)
     if(@major_version >= 1 and @minor_version >= 15)
-        @vfiler = vserver_name
-        return 1
+      @vfiler = vserver_name
+      1
+    else
+      print("\nONTAPI version must be at least 1.15 to send API to a vserver\n")
+      0
     end
-    print("\nONTAPI version must be at least 1.15 to send API to a vserver\n")
-    return 0
   end
 
 
@@ -608,7 +598,7 @@ class NaServer
   # function actually returns the vfiler name.
 
   def get_vserver()
-    return @vfiler
+    @vfiler
   end
 
 
@@ -616,7 +606,7 @@ class NaServer
 
   def set_originator_id(originator_id)
     @originator_id = originator_id
-    return 1
+    1
   end
 
 
@@ -624,7 +614,7 @@ class NaServer
   # ONTAP API commands get invoked.
 
   def get_originator_id()
-    return @originator_id
+    @originator_id
   end
 
   #Sets the connection timeout value, in seconds,for the given server context.
@@ -635,9 +625,9 @@ class NaServer
 
 
   #Retrieves the connection timeout value (in seconds) for the given server context.
-  
-  def get_timeout()    
-    return @timeout
+
+  def get_timeout()
+    @timeout
   end
 
 
@@ -648,14 +638,14 @@ class NaServer
 
   def set_server_cert_verification(enable)
     unless(enable.eql?(true) or enable.eql?(false))
-        return fail_response(13001, "NaServer::set_server_cert_verification: invalid argument " + enable + "specified");
+      fail_response(13001, "NaServer::set_server_cert_verification: invalid argument " + enable + "specified");
     end
     unless (use_https())
-        return fail_response(13001, "NaServer::set_server_cert_verification: server certificate verification can only be enabled or disabled for HTTPS transport")
+      fail_response(13001, "NaServer::set_server_cert_verification: server certificate verification can only be enabled or disabled for HTTPS transport")
     end
     @enable_server_cert_verification = enable
     @enable_hostname_verification = enable
-    return nil
+    nil
   end
 
 
@@ -664,58 +654,54 @@ class NaServer
 
 
   def is_server_cert_verification_enabled()
-    return @enable_server_cert_verification
+    @enable_server_cert_verification
   end
 
 
   # Sets the client certificate and key files that are required for client authentication
-  # by the server using certificates. If key file is not defined, then the certificate file 
+  # by the server using certificates. If key file is not defined, then the certificate file
   # will be used as the key file.
 
 
   def set_client_cert_and_key (cert_file, key_file = nil, key_passwd = nil)
     unless(cert_file)
-        return fail_response(13001, "NaServer::set_client_cert_and_key: certificate file not specified")
+      fail_response(13001, "NaServer::set_client_cert_and_key: certificate file not specified")
     end
     @cert_file = cert_file
     @key_file = key_file
     if(key_passwd == nil)
-        @key_passwd = ""
+      @key_passwd = ""
     else
-        @key_passwd = key_passwd
+      @key_passwd = key_passwd
     end
 
-    return nil
+    nil
   end
 
 
-  # Specifies the certificates of the Certificate Authorities (CAs) that are 
+  # Specifies the certificates of the Certificate Authorities (CAs) that are
   # trusted by this application and that will be used to verify the server certificate.
 
 
   def set_ca_certs (ca_file)
     if(ca_file == nil)
-        return fail_response(13001, "NaServer::set_ca_certs: missing CA certificate file")
+      fail_response(13001, "NaServer::set_ca_certs: missing CA certificate file")
+    else
+      @ca_file = ca_file
+      nil
     end
-    @ca_file = ca_file
-
-    return nil
   end
 
 
-  # Enables or disables hostname verification by the client during server certificate the 
+  # Enables or disables hostname verification by the client during server certificate the
   # server certificate.
 
 
   def set_hostname_verification (enable)
-    unless(enable.eql?(true) or enable.eql?(false))
-        return fail_response(13001, "NaServer::set_hostname_verification: invalid argument " + enable + "specified");
-    end
-    unless (@enable_server_cert_verification)
-        return fail_response(13001, "NaServer::set_hostname_verification: server certificate verification is not enabled")
-    end
-	@enable_hostname_verification = enable
-    return nil
+    return fail_response(13001, "NaServer::set_hostname_verification: invalid argument " + enable + "specified") unless(enable.eql?(true) or enable.eql?(false))
+    return fail_response(13001, "NaServer::set_hostname_verification: server certificate verification is not enabled") unless (@enable_server_cert_verification)
+    @enable_hostname_verification = enable
+    nil
   end
 
 
@@ -724,16 +710,12 @@ class NaServer
 
 
   def is_hostname_verification_enabled ()
-	return @enable_hostname_verification
+    @enable_hostname_verification
   end
 
+  private
 
 
-
-
-
-  # "private" subroutines for use by the public routines
-  # This is a private function, not to be called from outside NaServer
   # This is used when the transmission path fails, and we don't actually
   # get back any XML from the server.
 
@@ -742,7 +724,7 @@ class NaServer
     n.attr_set("status", "failed")
     n.attr_set("reason", reason)
     n.attr_set("errno", errno)
-    return n
+    n
   end
 end
 
@@ -759,30 +741,30 @@ class MyListener
   def tag_end(element)
     stack_len = $ZAPI_stack.length
     if($tag_element_stack.length <= 0)
-        print("\nError : Missing start tag for " + element + "\n")
-        exit
+      print("\nError : Missing start tag for " + element + "\n")
+      exit
     end
     tag_element = $tag_element_stack.pop()
     if(not tag_element.eql?(element))
-        print("\nError : Missing start tag for " + element + "\n")
-        exit
+      print("\nError : Missing start tag for " + element + "\n")
+      exit
     end
-    if(stack_len > 1) 
-        n = $ZAPI_stack.pop()
-        i = $ZAPI_stack.length
-    if(i != stack_len - 1)
+    if(stack_len > 1)
+      n = $ZAPI_stack.pop()
+      i = $ZAPI_stack.length
+      if(i != stack_len - 1)
         print("pop did not work!!!!\n")
+      end
+      $ZAPI_stack[i-1].child_add(n)
     end
-    $ZAPI_stack[i-1].child_add(n)
-    end	
   end
 
   def text(text)
     text = text.chomp
     i = $ZAPI_stack.length
     if(text.length > 0 and i > 0)
-        text = NaElement.escapeHTML(text)
-        $ZAPI_stack[i-1].add_content(text)
+      text = NaElement.escapeHTML(text)
+      $ZAPI_stack[i-1].add_content(text)
     end
   end
 end
