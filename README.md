@@ -1,7 +1,7 @@
-# NetApp.rb: Rubyesque library to interface with NetApp Filers (via NMSDK)
+# NetAppSdk: Ruby Gem to interface with NetApp Filers (via NMSDK)
 
 ## Introduction
-NetApp Manageability SDK and OnCommand SDK offer the posibility to directly interact with NetApp Filers on an API basis. The SDK provides for complete functional control of all subsets and configuration details provided by NetApp Filers. The API is extensive and interfacing to it can be a pain since the port to Ruby (and Python) was not done with Ruby typical programming paradigms in mind (at least in my opinon).
+NetAppSdk Manageability SDK and OnCommand SDK offer the posibility to directly interact with NetApp Filers on an API basis. The SDK provides for complete functional control of all subsets and configuration details provided by NetApp Filers. The API is extensive and interfacing to it can be a pain since the port to Ruby (and Python) was not done with Ruby typical programming paradigms in mind (at least in my opinon).
 
 This project tries to ease the interaction with NetApp filers significantly. Although this library is far from complete, it already gives access a substential feature set to interact with NetApp storage components such as:
 
@@ -94,7 +94,7 @@ irb(main):028:0* Aggregate.create("testaggr2", 10) #name, no. disks
 => true
 irb(main):029:0> Aggregate.info("testaggr2")
 => {:name=>"testaggr2", :uuid=>"3031cf33-ae0c-11e2-ad23-123478563412", :state=>"creating", :type=>"aggr", :haslocalroot=>"false", :haspartnerroot=>"false", :checksumstatus=>"active", :isinconsistent=>"false", :sizetotal=>"0", :sizeused=>"0", :sizeavail=>"0", :sizepercentage=>"0", :filestotal=>"18446744073709551552", :filesused=>"0", :isnaplock=>"false", :snaplocktype=>nil, :mirrorstatus=>"unmirrored", :raidsize=>"16", :raidstatus=>"raid_dp, initializing", :diskcount=>"0", :volumecount=>"0", :volstripeddvcount=>nil, :volstripedmdvcount=>nil, :volumes=>[], :plexcount=>"1", :plexes=>{{:name=>"/testaggr2/plex0"}=>{:isonline=>"false", :isresyncing=>"false", :resyncpercentage=>nil}}}
-irb(main):030:0> Volume.create("testaggr2", "testvol2", "5g") 
+irb(main):030:0> Volume.create("testaggr2", "testvol2", "5g")
 => true
 irb(main):031:0> puts Volume.info("testvol2")
 {:name=>"testvol2", :uuid=>"aaa2008d-ae0c-11e2-ad23-123478563412", :type=>"flex", :containingaggr=>"testaggr2", :sizetotal=>"5100273664", :sizeused=>"135168", :sizeavail=>"5100134400", :percentageused=>"0", :filestotal=>"155630", :filesused=>"96", :cloneparent=>nil, :clonechildren=>nil, :ischecksumenabled=>"true", :checksumstyle=>"block", :compression=>nil, :isinconsistent=>"false", :isinvalid=>"false", :isunrecoverable=>"false", :iswraparound=>nil, :issnaplock=>"false", :expirydate=>nil, :mirrorstatus=>"unmirrored", :raidsize=>"16", :raidstatus=>"raid_dp", :owningvfiler=>nil, :quotainit=>"0", :remotelocation=>nil, :reserve=>"0", :reserverequired=>"0", :reserveused=>"0", :reservedusedact=>"0", :snaplocktype=>nil, :snapshotblkreserved=>"262144", :snapshotperreserved=>"5", :spacereserveenabled=>"true", :spacereserve=>"volume", :diskcount=>"10", :plexcount=>"1", :plexes=>{{:name=>"/testaggr2/plex0"}=>{:isonline=>"true", :isresyncing=>"false", :resyncpercentage=>nil}}}
