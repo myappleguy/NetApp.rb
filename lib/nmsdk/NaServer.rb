@@ -141,18 +141,17 @@ $tag_element_stack = []
 
 class NaServer
 
-  #dtd files
   FILER_dtd = 'file:/etc/netapp_filer.dtd'
   DFM_dtd = 'file:/etc/netapp_dfm.dtd'
   AGENT_dtd = 'file:/etc/netapp_agent.dtd'
-
-  #URLs
   AGENT_URL = '/apis/XMLrequest'
   FILER_URL = '/servlets/netapp.servlets.admin.XMLrequest_filer'
   NETCACHE_URL = '/servlets/netapp.servlets.admin.XMLrequest'
   DFM_URL = '/apis/XMLrequest'
-
   ZAPI_xmlns = 'http://www.netapp.com/filer/admin'
+
+  attr_reader :vfiler, :style, :server_type, :transport_type
+  attr_accessor :application_name, :port, :xml, :originator_id, :timeout
 
   # Create a new connection to server 'server'.  Before use,
   # you either need to set the style to "hosts.equiv" or set
@@ -192,18 +191,6 @@ class NaServer
   end
 
 
-  # Set the client application name.
-  def set_application_name(app_name)
-    @nmsdk_app = app_name
-  end
-
-
-  # Get the client application name.
-  def get_application_name()
-    return @nmsdk_app
-  end
-
-
   # Pass in 'LOGIN' to cause the server to use HTTP simple
   # authentication with a username and password.  Pass in 'HOSTS'
   # to use the hosts.equiv file on the filer to determine access
@@ -237,16 +224,7 @@ class NaServer
         @enable_hostname_verification = false
     end
     @style = style
-    return nil
   end
-
-
-  # Get the authentication style
-
-  def get_style()
-    return @style
-  end
-
 
   # Set the admin username and password.  At present 'user' must always be 'root'.
 
@@ -291,16 +269,7 @@ class NaServer
         return fail_response(13001, "NaServer::set_server_type: bad type \"" + server_type + "\"")
     end
     @server_type = server_type
-    return nil
   end
-
-
-  # Get the type of server this server connection applies to.
-
-  def get_server_type()
-    return @server_type
-  end
-
 
   # Override the default transport type.  The valid transport
   # type are currently 'HTTP' and 'HTTPS'.
@@ -328,79 +297,28 @@ class NaServer
             @port = 443
         end
     end
-    return nil
   end
 
-
-  # Retrieve the transport used for this connection.
-
-  def get_transport_type()
-    return @transport_type
+  def debug_style= style
+    response_failed = fail_response(13001, "NaServer::set_debug_style: bad style \"" + style + "\"")
+    # that if makes no fucking sense, not sure this even works, FML
+    return response_failed if !style.eql?("NA_PRINT_DONT_PARSE")
+    @debug_style = style
   end
-
-
-  # Set the style of debug.
-
-  def set_debug_style(debug_style)
-    if(!debug_style.eql?("NA_PRINT_DONT_PARSE"))
-      return fail_response(13001, "NaServer::set_debug_style: bad style \"" + debug_style + "\"")
-    else
-      @debug_style = debug_style
-    end
-  end
-
-
-  # Override the default port for this server.  If you
-  # also call set_server_type(), you must call it before
-  # calling set_port().
-
-  def set_port(port)
-    @port = port
-  end
-
-
-  # Retrieve the port used for the remote server.
-
-  def get_port()
-    return @port
-  end
-
 
   # Check the type of debug style and return the
   # value for different needs. Return true if debug style
   # is NA_PRINT_DONT_PARSE,	else return false.
+  #
+  # is there any thing other than NA_PRINT_DONT_PARSE ??
+  # Should this just hold a freaking bool value???
 
-  def is_debugging()
-    if(@debug_style.eql?("NA_PRINT_DONT_PARSE"))
-        return true
-    else
-    return false
-    end
+  def debugging?
+    @debug_style.eql? "NA_PRINT_DONT_PARSE"
   end
 
-
-  # Return the raw XML output.
-
-  def get_raw_xml_output()
-    return @xml
-  end
-
-
-  # Save the raw XML output.
-
-  def set_raw_xml_output(xml)
-    @xml = xml
-  end
-
-
-  # Determines whether https is enabled.
-
-  def use_https()
-    if(@transport_type.eql?("HTTPS"))
-      return true
-    else
-      return false
-    end
+  def https?
+    @transport_type.eql? "HTTPS"
   end
 
 
@@ -452,15 +370,17 @@ class NaServer
     xmlrequest = req.toEncodedString()
     vfiler_req = ""
     originator_id_req = ""
-    if(!@vfiler.eql?(""))
+    app_name_req = ""
+
+    if !@vfiler.blank?
         vfiler_req = " vfiler=\"" + @vfiler + "\""
     end
-    if(!@originator_id.eql?(""))
+
+    if !@originator_id.blank?
         originator_id_req = " originator_id=\"" + @originator_id + "\""
     end
 
-    app_name_req = ""
-    if(!@nmsdk_app.eql?(""))
+    if !@nmsdk_app.blank?
         app_name_req = " nmsdk_app='" + @nmsdk_app + "'"
     end
 
@@ -481,7 +401,7 @@ class NaServer
           "</netapp>"
 
     if(@debug_style.eql?("NA_PRINT_DONT_PARSE"))
-        print("INPUT \n " + content)
+        puts "INPUT \n #{content}"
     end
 
     begin
@@ -560,32 +480,30 @@ class NaServer
    #                            'volume', 'vol0');
    #
 
+   #TODO - refactor this ball of mud
   def invoke(api, *args)
     num_parms = args.length
-    if ((num_parms & 1) != 0)
-        return self.fail_response(13001, "in Zapi::invoke, invalid number of parameters")
-    end
+    return self.fail_response(13001, "in Zapi::invoke, invalid number of parameters") if num_parms.odd?
     xi = NaElement.new(api)
     i = 0
     while(i < num_parms)
-        key = args[i]
-    i = i + 1
-    value = args[i]
-    i = i + 1
-    xi.child_add(NaElement.new(key, value))
+      key = args[i]
+      i = i + 1
+      value = args[i]
+      i = i + 1
+      xi.child_add(NaElement.new(key, value))
     end
     return invoke_elem(xi)
   end
 
 
-  #Sets the vfiler name. This function is used for vfiler-tunneling.
-
-  def set_vfiler(vfiler_name)
+  def vfiler= vfiler_name
     if(@major_version >= 1 and @minor_version >= 7)
-        @vfiler = vfiler_name
-        return 1
+      @vfiler = vfiler_name
+      true
+    else
+      false
     end
-    return 0
   end
 
 
@@ -593,13 +511,14 @@ class NaServer
   # However, vserver tunneling actually uses vfiler-tunneling.
   # Hence this function internally sets the vfiler name.
 
-  def set_vserver(vserver_name)
+  def vserver= vserver_name
     if(@major_version >= 1 and @minor_version >= 15)
-        @vfiler = vserver_name
-        return 1
+      @vfiler = vserver_name
+      true
+    else
+      puts "\nONTAPI version must be at least 1.15 to send API to a vserver\n"
+      false
     end
-    print("\nONTAPI version must be at least 1.15 to send API to a vserver\n")
-    return 0
   end
 
 
@@ -607,39 +526,9 @@ class NaServer
   # However, vserver tunneling actually uses vfiler-tunneling. Hence this
   # function actually returns the vfiler name.
 
-  def get_vserver()
-    return @vfiler
+  def vserver
+    @vfiler
   end
-
-
-  # Function to set the originator_id before executing any ONTAP API.
-
-  def set_originator_id(originator_id)
-    @originator_id = originator_id
-    return 1
-  end
-
-
-  # Gets the originator_id for the given server context on which the
-  # ONTAP API commands get invoked.
-
-  def get_originator_id()
-    return @originator_id
-  end
-
-  #Sets the connection timeout value, in seconds,for the given server context.
-
-  def set_timeout(timeout)
-    @timeout = timeout
-  end
-
-
-  #Retrieves the connection timeout value (in seconds) for the given server context.
-
-  def get_timeout()
-    return @timeout
-  end
-
 
   # Enables or disables server certificate verification by the client.
   # Server certificate verification is enabled by default when style
@@ -650,12 +539,11 @@ class NaServer
     unless(enable.eql?(true) or enable.eql?(false))
         return fail_response(13001, "NaServer::set_server_cert_verification: invalid argument " + enable + "specified");
     end
-    unless (use_https())
+    unless https?
         return fail_response(13001, "NaServer::set_server_cert_verification: server certificate verification can only be enabled or disabled for HTTPS transport")
     end
     @enable_server_cert_verification = enable
     @enable_hostname_verification = enable
-    return nil
   end
 
 
@@ -663,8 +551,8 @@ class NaServer
   # Returns true if it is enabled, else returns false.
 
 
-  def is_server_cert_verification_enabled()
-    return @enable_server_cert_verification
+  def server_cert_verification_enabled?
+    @enable_server_cert_verification
   end
 
 
@@ -674,18 +562,14 @@ class NaServer
 
 
   def set_client_cert_and_key (cert_file, key_file = nil, key_passwd = nil)
-    unless(cert_file)
-        return fail_response(13001, "NaServer::set_client_cert_and_key: certificate file not specified")
-    end
+    return fail_response(13001, "NaServer::set_client_cert_and_key: certificate file not specified") unless(cert_file)
     @cert_file = cert_file
     @key_file = key_file
-    if(key_passwd == nil)
-        @key_passwd = ""
+    if key_passwd
+      @key_passwd = key_passwd
     else
-        @key_passwd = key_passwd
+      @key_passwd = ""
     end
-
-    return nil
   end
 
 
@@ -694,12 +578,8 @@ class NaServer
 
 
   def set_ca_certs (ca_file)
-    if(ca_file == nil)
-        return fail_response(13001, "NaServer::set_ca_certs: missing CA certificate file")
-    end
+    return fail_response(13001, "NaServer::set_ca_certs: missing CA certificate file") unless ca_file
     @ca_file = ca_file
-
-    return nil
   end
 
 
@@ -708,41 +588,28 @@ class NaServer
 
 
   def set_hostname_verification (enable)
-    unless(enable.eql?(true) or enable.eql?(false))
-        return fail_response(13001, "NaServer::set_hostname_verification: invalid argument " + enable + "specified");
-    end
-    unless (@enable_server_cert_verification)
-        return fail_response(13001, "NaServer::set_hostname_verification: server certificate verification is not enabled")
-    end
-	@enable_hostname_verification = enable
-    return nil
+    not_bool_response = fail_response(13001, "NaServer::set_hostname_verification: invalid argument " + enable + "specified")
+    return not_bool_response unless !!enable == enable
+    not_serv_cert_response = fail_response(13001, "NaServer::set_hostname_verification: server certificate verification is not enabled")
+    return not_serv_cert_response  unless server_cert_verification_enabled?
+    @enable_hostname_verification = enable
+  end
+
+  def hostname_verification_enabled?
+    !!@enable_hostname_verification
   end
 
 
-  # Determines whether hostname verification is enabled or not.
-  # Returns true if it is enabled, else returns false
+  private
 
-
-  def is_hostname_verification_enabled ()
-	return @enable_hostname_verification
-  end
-
-
-
-
-
-
-  # "private" subroutines for use by the public routines
-  # This is a private function, not to be called from outside NaServer
   # This is used when the transmission path fails, and we don't actually
   # get back any XML from the server.
-
   def fail_response(errno, reason)
     n = NaElement.new("results")
     n.attr_set("status", "failed")
     n.attr_set("reason", reason)
     n.attr_set("errno", errno)
-    return n
+    n
   end
 end
 
