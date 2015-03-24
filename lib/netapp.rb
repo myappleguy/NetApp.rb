@@ -18,3 +18,6 @@ Gem.find_files("lib/**/*.rb").each do |path|
   require path
 end
 
+module NetAppSdk
+end
+
