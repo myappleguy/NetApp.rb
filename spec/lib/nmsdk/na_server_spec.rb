@@ -1,0 +1,3 @@
+describe NaServer do
+
+end
