@@ -4,7 +4,7 @@ require 'rubygems'
 require 'sinatra'
 require 'json'
 #require 'bcrypt'
-require './lib/netapp.rb'
+require './lib/net-app-sdk'
 
 @@fileraddr = "192.168.55.10"
 @@fileruser = "root"
