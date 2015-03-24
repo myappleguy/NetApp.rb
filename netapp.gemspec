@@ -1,13 +1,22 @@
-Gem::Specification.new do |s|
-	s.name		= 'NetApp.rb'
-	s.version	= '0.1.2'
-	s.date		= '2013-09-02'
-	s.summary	= 'NetApp.rb'
-	s.description	= 'Rubyesque library to interface with NetApp Filers (via NMSDK)'
-	s.requirements	= 'Proprietary NMSDK as provided by NetApp'
-	s.authors	= ["Aaron Zauner"]
-	s.email		= 'azet@azet.org'
-	s.files		= ["lib/netapp.rb"]
-	s.homepage	= 'https://github.com/azet/NetApp.rb'
-	s.license	= 'MIT'
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'net-app-sdk/version'
+
+Gem::Specification.new do |spec|
+  spec.name = 'net-app-sdk'
+  spec.version = NetAppSdk::VERSION
+  spec.date = '2015-03-23'
+  spec.summary = 'net-app-sdk'
+  spec.description = 'Ruby gem to interface with NetApp Filers (via NMSDK), used for GRC'
+  spec.requirements = 'Proprietary NMSDK as provided by NetApp'
+  spec.authors = ["Todd Pickell", "Marion Newman"]
+  spec.email = 'todd.pickell@ge.com'
+  spec.homepage = 'https://github.com/myappleguy/NetApp.rb'
+  spec.license = 'MIT'
+
+  spec.add_development_dependency "pry"
+  spec.add_development_dependency "pry-nav"
+  spec.add_development_dependency "bundler", "~> 1.3"
+  spec.add_development_dependency "rspec"
+  spec.add_dependency "rake"
 end

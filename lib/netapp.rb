@@ -1,18 +1,20 @@
 #!/usr/bin/env ruby
 #
-# NetApp.rb:
-#   * Ruby library for NetApp filer administration via NetApp NMSDK
+# net-app-sdk
+#   * Ruby gem for NetApp filer administration via NetApp NMSDK
 #   * https://github.com/azet/NetApp.rb
 #
 # LICENSE:
 #   MIT License (http://opensource.org/licenses/MIT)
 #
 # AUTHORS:
-#   Aaron <azet@azet.org> Zauner
+#  Todd Pickell @tapickell <todd.pickell@ge.com>
+#  Marion Newman <marion.newman@ge.com>
+#
 #
 
-require 'nmsdk/NaServer'
+Gem.find_files("lib/**/*.rb").each do |path|
+  puts "Requiring #{path}"
+  require path
+end
 
-#
-#  "Style is what gives value and currency to thoughts." -- Schopenhauer
-#
