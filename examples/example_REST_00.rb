@@ -34,6 +34,7 @@ helpers do
 end
 
 get '/' do
+  require "pry"; binding.pry
   "nope."
 end
 
