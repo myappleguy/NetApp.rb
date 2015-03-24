@@ -6,14 +6,10 @@ module NetAppSdk
       require "pry"; binding.pry
       @@filer = NaServer.new(filer, 1, 17) # specifies API version (1.17)
       if secure
-        # connect via SSL/TLS
         @@filer.set_transport_type("HTTPS")
-        raise 'insecure connection!' unless @@filer.use_https
-        @@filer.set_admin_user(username, password)
-      else
-        # non-encrypted connection
-        @@filer.set_admin_user(username, password)
+        raise 'insecure connection!' unless @@filer.https?
       end
+      @@filer.set_admin_user(username, password)
 
       # TODO: implement NaServer::set_server_type for NetApp DFM/Filer
       # TODO: implement different login styles (usr,pwd - cert - ...)
@@ -21,8 +17,7 @@ module NetAppSdk
     end
 
     def self.is_secure?
-      https = @@filer.use_https
-      return true if https
+      @@filer.https?
     end
 
     def self.is_clustered?

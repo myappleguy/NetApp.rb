@@ -374,15 +374,15 @@ class NaServer
     originator_id_req = ""
     app_name_req = ""
 
-    if !@vfiler.blank?
+    if !@vfiler.empty?
         vfiler_req = " vfiler=\"" + @vfiler + "\""
     end
 
-    if !@originator_id.blank?
+    if !@originator_id.empty?
         originator_id_req = " originator_id=\"" + @originator_id + "\""
     end
 
-    if !@nmsdk_app.blank?
+    if !@nmsdk_app.empty?
         app_name_req = " nmsdk_app='" + @nmsdk_app + "'"
     end
 
