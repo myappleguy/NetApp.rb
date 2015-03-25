@@ -402,6 +402,7 @@ class NaServer
     end
 
     begin
+      require "pry"; binding.pry
       http = Net::HTTP.new(@server, @port)
       if(@transport_type.eql?("HTTPS"))
         http.use_ssl = true
@@ -478,6 +479,9 @@ class NaServer
   #
 
    #TODO - refactor this ball of mud
+  #This code is a little fucked up right here vvv
+# I think it basically is trying to do something like a hash without using a hash
+#
   def invoke(api, *args)
     num_parms = args.length
     return self.fail_response(13001, "in Zapi::invoke, invalid number of parameters") if num_parms.odd?

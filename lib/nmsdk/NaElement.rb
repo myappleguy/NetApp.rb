@@ -293,6 +293,12 @@ class NaElement
     box
   end
 
+  #This used to have a comment above it that said this method should be private and not used outside of this class but nothing
+  #was private so I made it private and we break on it, lmao. GReat job guys. What a clusterfuck of bad code
+  def attr_set(key, value)
+    @attrkeys.push(key)
+    @attrvals.push(value)
+  end
 
   private
 
@@ -352,10 +358,7 @@ class NaElement
     plaintext
   end
 
-  def attr_set(key, value)
-    @attrkeys.push(key)
-    @attrvals.push(value)
-  end
+
 
   #Wait.... hash. anyone. hash. hash.
   #so much fail up in here
